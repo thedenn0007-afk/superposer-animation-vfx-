@@ -1,0 +1,31 @@
+{
+  "name": "nexus-superpower-simulator",
+  "version": "1.0.0",
+  "description": "A real-time browser-based superpower simulator using webcam hand tracking",
+  "main": "index.html",
+  "scripts": {
+    "start": "node serve.js",
+    "dev": "node serve.js",
+    "build": "echo 'No build step required - static site'",
+    "preview": "node serve.js"
+  },
+  "keywords": [
+    "hand-tracking",
+    "mediapipe",
+    "webcam",
+    "superpower",
+    "simulation",
+    "vfx",
+    "animation"
+  ],
+  "author": "thedenn0007-afk",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thedenn0007-afk/superposer-animation-vfx-.git"
+  },
+  "homepage": "https://nexus-superpower-simulator.vercel.app",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

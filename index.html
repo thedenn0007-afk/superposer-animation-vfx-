@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS — Superpower Simulator</title>
+
+  <!-- MediaPipe Hands -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── TOP BAR ── -->
+    <header id="header">
+      <span id="logo">NEXUS</span>
+      <div id="status-bar">
+        <span class="status-item"><span class="dot" id="cam-dot"></span><span id="cam-status">INITIALIZING</span></span>
+        <span class="status-item"><span class="dot green"></span>MEDIAPIPE READY</span>
+        <span class="status-item" id="fps-counter">FPS: --</span>
+      </div>
+      <div id="header-mode">MODE: <span id="header-mode-name">SPHERE</span></div>
+    </header>
+
+    <!-- ── LEFT PANEL ── -->
+    <aside id="left-panel">
+      <div class="panel-section">
+        <div class="panel-title">POWERS</div>
+        <button class="power-btn active" data-mode="sphere" onclick="setMode('sphere')">
+          <span class="power-icon">⚡</span>
+          <span class="power-label">ENERGY SPHERE</span>
+          <span class="power-key">1</span>
+        </button>
+        <button class="power-btn" data-mode="telekinesis" onclick="setMode('telekinesis')">
+          <span class="power-icon">🌀</span>
+          <span class="power-label">TELEKINESIS</span>
+          <span class="power-key">2</span>
+        </button>
+        <button class="power-btn" data-mode="shield" onclick="setMode('shield')">
+          <span class="power-icon">🛡</span>
+          <span class="power-label">FORCE FIELD</span>
+          <span class="power-key">3</span>
+        </button>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">GESTURES</div>
+        <div class="gesture-item" id="g-pinch">
+          <span class="gesture-icon">🤌</span> PINCH
+          <span class="gesture-status" id="gst-pinch">—</span>
+        </div>
+        <div class="gesture-item" id="g-open">
+          <span class="gesture-icon">🖐</span> OPEN PALM
+          <span class="gesture-status" id="gst-open">—</span>
+        </div>
+        <div class="gesture-item" id="g-fist">
+          <span class="gesture-icon">✊</span> FIST
+          <span class="gesture-status" id="gst-fist">—</span>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">INTENSITY</div>
+        <div id="intensity-bar-wrap">
+          <div id="intensity-bar"></div>
+          <span id="intensity-value">0%</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── MAIN CANVAS AREA ── -->
+    <main id="main-area">
+      <video id="webcam" autoplay muted playsinline></video>
+      <canvas id="overlay"></canvas>
+      <div id="gesture-flash"></div>
+    </main>
+
+    <!-- ── RIGHT PANEL ── -->
+    <aside id="right-panel">
+      <div class="panel-section">
+        <div class="panel-title">COMMAND CONSOLE</div>
+        <div id="console-log"></div>
+        <div id="cmd-wrap">
+          <span id="cmd-prefix">/</span>
+          <input id="cmd-input" type="text" placeholder="sphere | shield | telekinesis..." autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="cmd-hints">
+          <div>/sphere &nbsp;&nbsp;/shield</div>
+          <div>/telekinesis</div>
+          <div>/expand &nbsp;/compress</div>
+          <div>/reset &nbsp;&nbsp;/help</div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">HAND DATA</div>
+        <div class="data-row"><span>THUMB TIP</span><span id="d-thumb">—</span></div>
+        <div class="data-row"><span>INDEX TIP</span><span id="d-index">—</span></div>
+        <div class="data-row"><span>PALM CTR</span><span id="d-palm">—</span></div>
+        <div class="data-row"><span>PINCH DIST</span><span id="d-pinch">—</span></div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">PARTICLES</div>
+        <div class="data-row"><span>ACTIVE</span><span id="d-particles">0</span></div>
+        <div class="data-row"><span>OBJECTS</span><span id="d-objects">0</span></div>
+      </div>
+    </aside>
+
+    <!-- ── BOTTOM BAR ── -->
+    <footer id="footer">
+      <div id="footer-left">
+        <span>NEXUS SUPERPOWER SIMULATOR</span>
+        <span class="sep">|</span>
+        <span>MEDIAPIPE HANDS v0.4</span>
+      </div>
+      <div id="active-power-display">
+        <span id="active-label">ACTIVE:</span>
+        <span id="active-power-name">ENERGY SPHERE</span>
+        <span id="active-power-icon">⚡</span>
+      </div>
+      <div id="footer-right">
+        <span>KEYS 1 · 2 · 3 — SWITCH POWER</span>
+      </div>
+    </footer>
+
+  </div><!-- /#app -->
+
+  <!-- JS modules in order -->
+  <script src="js/utils.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/powers.js"></script>
+  <script src="js/gestures.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
