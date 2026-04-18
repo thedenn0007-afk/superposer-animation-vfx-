@@ -44,15 +44,38 @@ let fpsTimer   = 0;
 let displayFPS = 0;
 let lastTime   = performance.now();
 
+// Active camera handle (so we can stop it)
+let activeCameraHandle = null;
+let cameraRunning = false;
+
 // Camera overlay
 const camOverlay = (() => {
   const el = document.createElement('div');
   el.id = 'cam-overlay';
   el.innerHTML = `
     <div class="cam-icon">📷</div>
-    <h2>CAMERA ACCESS REQUIRED</h2>
-    <p>NEXUS requires webcam access to track your hand gestures.</p>
-    <p style="margin-top:8px;color:var(--cyan)">Please allow camera permission in your browser.</p>`;
+    <h2>NEXUS SUPERPOWER SIMULATOR</h2>
+    <p>Track your hand gestures with your webcam to control powers.</p>
+    <button id="start-cam-btn" onclick="startCamera()"
+      style="margin-top:20px;padding:12px 32px;background:transparent;
+             border:2px solid var(--cyan);color:var(--cyan);
+             font-family:var(--font-d,monospace);font-size:13px;
+             letter-spacing:3px;cursor:pointer;border-radius:3px;
+             text-transform:uppercase;transition:all .2s"
+      onmouseover="this.style.background='var(--cyan)';this.style.color='#000'"
+      onmouseout="this.style.background='transparent';this.style.color='var(--cyan)'">
+      ▶ START CAMERA
+    </button>
+    <p style="margin-top:12px;font-size:10px;color:var(--text-dim)">
+      Or use DEMO MODE (mouse only) — camera optional
+    </p>
+    <button onclick="startDemoModeManual()"
+      style="margin-top:4px;padding:6px 18px;background:transparent;
+             border:1px solid var(--text-dim);color:var(--text-dim);
+             font-family:var(--font-d,monospace);font-size:10px;
+             letter-spacing:2px;cursor:pointer;border-radius:3px">
+      DEMO MODE
+    </button>`;
   document.getElementById('main-area').appendChild(el);
   return el;
 })();
@@ -128,6 +151,56 @@ async function tryMPCamera(hands) {
     camera.start().then(() => resolve(camera)).catch(reject);
   });
 }
+
+// ── Stop active camera stream ──
+function stopCamera() {
+  if (activeCameraHandle) {
+    try { activeCameraHandle.stop(); } catch (_) {}
+    activeCameraHandle = null;
+  }
+  if (videoEl.srcObject) {
+    videoEl.srcObject.getTracks().forEach(t => t.stop());
+    videoEl.srcObject = null;
+  }
+  cameraRunning = false;
+  rawLandmarks = null;
+  hud.setCamReady(false);
+  logger.log('Camera stopped', 'warn');
+  _updateCamToggleBtn();
+}
+
+function _updateCamToggleBtn() {
+  const btn = document.getElementById('cam-toggle-btn');
+  if (!btn) return;
+  if (cameraRunning) {
+    btn.textContent = '⏹ CAM OFF';
+    btn.style.borderColor = '#ff4444';
+    btn.style.color = '#ff4444';
+  } else {
+    btn.textContent = '▶ CAM ON';
+    btn.style.borderColor = 'var(--cyan)';
+    btn.style.color = 'var(--cyan)';
+  }
+}
+
+async function startCamera() {
+  const btn = document.getElementById('start-cam-btn');
+  if (btn) { btn.textContent = 'CONNECTING...'; btn.disabled = true; }
+  await initMediaPipe();
+}
+
+function startDemoModeManual() {
+  camOverlay.classList.add('hidden');
+  startDemoMode();
+  _updateCamToggleBtn();
+}
+
+window.startCamera = startCamera;
+window.startDemoModeManual = startDemoModeManual;
+window.toggleCamera = function() {
+  if (cameraRunning) stopCamera();
+  else startCamera();
+};
 
 // ── Strategy 2: getUserMedia directly → feed to MediaPipe manually ──
 async function tryGetUserMedia(hands) {
@@ -267,10 +340,12 @@ async function initMediaPipe() {
   // Strategy 1: MediaPipe Camera helper
   try {
     logger.log('Trying MediaPipe Camera...', 'info');
-    await tryMPCamera(hands);
+    activeCameraHandle = await tryMPCamera(hands);
+    cameraRunning = true;
     camOverlay.classList.add('hidden');
     hud.setCamReady(true);
     logger.log('Camera ready (MP Camera API)', 'ok');
+    _updateCamToggleBtn();
     return;
   } catch (e1) {
     logger.log(`MP Camera failed: ${e1.message}`, 'warn');
@@ -279,17 +354,21 @@ async function initMediaPipe() {
   // Strategy 2: Raw getUserMedia
   try {
     logger.log('Trying getUserMedia fallback...', 'info');
-    await tryGetUserMedia(hands);
+    activeCameraHandle = await tryGetUserMedia(hands);
+    cameraRunning = true;
     camOverlay.classList.add('hidden');
     hud.setCamReady(true);
     logger.log('Camera ready (getUserMedia)', 'ok');
+    _updateCamToggleBtn();
     return;
   } catch (e2) {
     logger.log(`getUserMedia failed: ${e2.message}`, 'warn');
   }
 
-  // Final fallback: demo/mouse mode
-  startDemoMode();
+  // Final fallback: show error on overlay
+  const btn = document.getElementById('start-cam-btn');
+  if (btn) { btn.textContent = '▶ START CAMERA'; btn.disabled = false; }
+  logger.log('Camera unavailable — try DEMO MODE', 'error');
 }
 
 // ════════════════════════════════════════════
@@ -539,8 +618,7 @@ const cmdProcessor = new CommandProcessor(
   hud.setMode('sphere');
 
   logger.log('Rendering engine ready', 'ok');
-  logger.log('Awaiting camera...', 'info');
+  logger.log('Press START CAMERA to begin', 'info');
 
-  initMediaPipe();
   requestAnimationFrame(animate);
 })();
